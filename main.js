@@ -4,7 +4,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled = false; // Disable shadows since we're using Billboards instead
 
 // Orbit Controls
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -42,12 +42,10 @@ scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(10, 20, 10);
-directionalLight.castShadow = true;
 scene.add(directionalLight);
 
 const pointLight = new THREE.PointLight(0xff0000, 1, 100);
 pointLight.position.set(-10, 10, -10);
-pointLight.castShadow = true;
 scene.add(pointLight);
 
 // Declare textureLoader once at the top
@@ -61,7 +59,7 @@ const groundMaterial = new THREE.MeshStandardMaterial({
 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2; // This makes it horizontal
-ground.receiveShadow = true;
+ground.rotation.y = Math.PI; // Rotate 180 degrees around Y-axis to align with skybox
 scene.add(ground);
 
 // Skybox using environment map directly on the scene
@@ -94,8 +92,6 @@ for (let i = 0; i < 20; i++) {
     const material = new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff });
     const shape = new THREE.Mesh(geometry, material);
     shape.position.set((Math.random() - 0.5) * 50, Math.random() * 10 + 2, (Math.random() - 0.5) * 50);
-    shape.castShadow = true;
-    shape.receiveShadow = true;
     scene.add(shape);
     shapes.push(shape);
 }
@@ -107,7 +103,6 @@ const texturedCube = new THREE.Mesh(
     new THREE.MeshStandardMaterial({ map: brickTexture })
 );
 texturedCube.position.set(5, 1, 5);
-texturedCube.castShadow = true;
 scene.add(texturedCube);
 
 // Second textured shape (Additional textured model)
@@ -116,7 +111,6 @@ const secondTexturedCube = new THREE.Mesh(
     new THREE.MeshStandardMaterial({ map: brickTexture })
 );
 secondTexturedCube.position.set(10, 1.5, 10);
-secondTexturedCube.castShadow = true;
 scene.add(secondTexturedCube);
 
 // Animated shape (Requirement: At least one animated shape)
@@ -125,7 +119,6 @@ const animatedSphere = new THREE.Mesh(
     new THREE.MeshStandardMaterial({ color: 0x00ff00 })
 );
 animatedSphere.position.set(-5, 2, -5);
-animatedSphere.castShadow = true;
 scene.add(animatedSphere);
 
 // Load crate.glb model (Additional model)
@@ -136,8 +129,7 @@ gltfLoader.load(
         const crate = gltf.scene;
         crate.traverse((child) => {
             if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
+                // No shadows, so no need for castShadow/receiveShadow
             }
         });
         crate.position.set(-10, 0, -10); // Position the crate
@@ -165,8 +157,6 @@ mtlLoader.load(
                         if (child.material && !child.material.map) {
                             child.material.color.set(0x00ff00); // Fallback to green if no texture
                         }
-                        child.castShadow = true;
-                        child.receiveShadow = true;
                     }
                 });
                 // Compute the bounding box to adjust position
@@ -191,6 +181,26 @@ mtlLoader.load(
     (xhr) => console.log((xhr.loaded / xhr.total * 100) + '% bird materials loaded'),
     (error) => console.error('Bird MTL error:', error)
 );
+
+// Billboards (Extra 3) - Add a few billboards to the scene
+const billboardTexture = textureLoader.load('textures/bird-park.png', () => console.log('Billboard texture loaded'), undefined, (error) => console.error('Billboard texture error:', error));
+const billboardMaterial = new THREE.SpriteMaterial({ map: billboardTexture });
+
+// Create a few billboards and place them in the scene
+const billboard1 = new THREE.Sprite(billboardMaterial);
+billboard1.position.set(0, 5, 0); // Above the origin
+billboard1.scale.set(3, 3, 1); // Size of the billboard
+scene.add(billboard1);
+
+const billboard2 = new THREE.Sprite(billboardMaterial);
+billboard2.position.set(20, 5, 20); // Near the bird
+billboard2.scale.set(3, 3, 1);
+scene.add(billboard2);
+
+const billboard3 = new THREE.Sprite(billboardMaterial);
+billboard3.position.set(-20, 5, -20); // Near the crate
+billboard3.scale.set(3, 3, 1);
+scene.add(billboard3);
 
 // Fog (Extra 1) - Using exponential fog for better effect
 scene.fog = new THREE.FogExp2(0xaaaaaa, 0.035); // Fog density
